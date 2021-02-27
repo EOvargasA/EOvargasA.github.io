@@ -1,0 +1,326 @@
+<html>
+    <head>
+        <link rel="preconnect" href="https://fonts.gstatic.com">
+        <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300&display=swap" rel="stylesheet">
+        <!--Libreria de google maps-->
+        <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBwmH1MqQf8SwFQv1vaVHdriiNTC6y3ZPg&callback=initMap"></script>
+        <!--Libreria de axios-->
+        <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+        <style type="text/css">
+            #map{
+                height: 500px;
+                width: 100%;
+            }
+
+            body{
+                background-color: #3C3C3C;
+            }
+
+            .titulo{
+                text-align: center;
+                color: #D0141F;
+                font-family: 'Rubik', sans-serif;
+                text-transform: uppercase;
+                font-size: 4.5em;
+                /*calc(2em + 2vw)*/
+            }
+
+            .subtitulo{
+                color: #E7E7E7;
+                font-family: 'Rubik', sans-serif;
+                text-transform: uppercase;
+                font-size: calc(1.2em + 1.5vw);
+                /*calc(1.7em + 1vw)*/
+            }
+
+            #info, #busqueda{
+                color: #E7E7E7;
+                font-family: 'Rubik', sans-serif;
+                font-size: calc(1.5em + 0.5vw);
+                /*calc(0.5em + 1.5vw)*/
+            }
+
+            #info input, #busqueda input {
+                /*height: calc(1em + 1vw);*/
+                font-size: calc(0.4rem + 1.3vw);
+                /*calc(0.5rem + 1vw)*/
+            }
+
+            #res, #prom, #devest {
+                color: #E7E7E7;
+                font-family: 'Rubik', sans-serif;
+                font-size: calc(0.8em + 1vw);
+                /*calc(0.5em + 1vw)*/
+            }
+
+            .diamond{
+                background-color: #828DDC;
+                width: 100%;
+            }
+
+            .pearl{
+                background-color: #EB40E5;
+                width: 100%;
+            }
+
+            .diamond p, .pearl p{
+                color: #E7E7E7;
+                font-family: 'Rubik', sans-serif;
+                font-size: calc(1em + 1vw);
+            }
+
+            .diamond table, .pearl table{
+                width: 100%;
+            }
+
+            .diamond .titulo{
+                color: #D710D4;
+                font-size: 2.5em;
+            }
+
+            .pearl .titulo{
+                color: #2925CA;
+                font-size: 2.5em;
+            }
+        </style>
+        <title>Localizador de tiendas</title>
+    </head>
+    <body>
+        <div id="fb-root"></div>
+        <script async defer crossorigin="anonymous" src="https://connect.facebook.net/es_LA/sdk.js#xfbml=1&version=v10.0" 
+        nonce="Z13TsrEI"></script>
+        <h1 class="titulo">Localizador de tiendas</h1>
+
+        <div id="map"></div>
+
+        <h4 class="subtitulo">Informacion</h4>
+        <Form id="info">
+            Rango: <input type="number" id="rangoInf" min=0 step=1 value=1>
+            <br><br><input type="submit" value="Buscar">
+        </Form>
+
+        <p id="res">Restaurantes: </p>
+        <p id="prom">Media: </p>
+        <p id="devest">Desviacion estandar: </p>
+
+        <h4 class="subtitulo">Buscar Restaurantes</h4>
+        <Form id="busqueda">
+            Rango: <input type="number" id="rangoBus" min=0 step=1 value = 1>
+            <br><br> Puntuacion: <input type="number" id="rateBus" min=0 max=4 step=0.5 value = 4>
+            <br><br> <input type="submit" value="Buscar">
+        </Form>
+        
+        <div id="resBusq"></div>
+
+        <!--div class="diamond">
+            <p class="titulo">La taberna de fae</p>
+            <table>
+                <tr>
+                    <td><p>Sitio web: http://linisbestwaifu.com</p></td>
+                    <td><p>Rating: 5</p></td>
+                </tr>
+                <tr>
+                    <td><p>Direccion: 82247 Mariano Entrada</p></td>
+                    <td><p>Telefono: 833 233 1251</p></td>
+                </tr>
+            </table>
+            <br>
+            <div>
+            <div class="fb-like" data-href="https://developers.facebook.com/docs/plugins/" 
+            data-width="100" data-layout="standard" data-action="like" data-size="small" data-share="true"></div>
+            </div>
+        </div>
+
+        <div class="pearl">
+            <p class="titulo">La taberna de fae</p>
+            <table>
+                <tr>
+                    <td><p>Sitio web: http://linisbestwaifu.com</p></td>
+                    <td><p>Rating: 5</p></td>
+                </tr>
+                <tr>
+                    <td><p>Direccion: 82247 Mariano Entrada</p></td>
+                    <td><p>Telefono: 833 233 1251</p></td>
+                </tr>
+            </table>
+            <br>
+            <div class="fb-like" data-href="http://linisbestwaifu.com" 
+            data-width="100" data-layout="standard" data-action="like" data-size="small" data-share="true"></div-->
+        </div>
+
+        <script>
+            const formaInf = document.getElementById("info");
+            const formaBusq = document.getElementById("busqueda");
+            var map, buffer, marcador;
+
+            function initMap(){
+                var coord = {lat: 19.440057053713137, lng: -99.12704709742486};
+
+                map = new google.maps.Map(document.getElementById("map"), {
+                    zoom: 12,
+                    center: coord
+                });
+
+                marcador = new google.maps.Marker({
+                    position: coord,
+                    map: map
+                });
+
+                map.addListener("click", (e) => {
+                   marcador.setPosition(e.latLng);
+                });
+            }
+
+            function peticion(){
+                axios.get("https://cors-anywhere.herokuapp.com/https://recruiting-datasets.s3.us-east-2.amazonaws.com/data_melp.json", {
+                    headers: {
+                        "Access-Control-Allow-Origin": "Yes"
+                    }
+                }).then((response) => {
+                    buffer = response.data;
+                }).catch((e) => {
+                    console.log(e);
+                });
+            }
+
+            peticion();
+
+            formaInf.addEventListener("submit", (e) =>{
+                e.preventDefault();
+                var calificaciones = [], distancia;
+                var orLat = marcador.getPosition().lat();
+                var orLng = marcador.getPosition().lng();
+                var radio = (1/111120) * document.getElementById("rangoInf").value;
+                var disLat, disLng, distancia;
+                var promedio = 0, desviacion = 0;
+
+                try{
+                    buffer.forEach(element => {
+                        disLat = Math.pow(element.address.location.lat - orLat, 2);
+                        disLng = Math.pow(element.address.location.lng - orLng, 2);
+                        distancia = Math.sqrt(disLat + disLng);
+
+                        if(distancia <= radio){
+                            calificaciones[calificaciones.length] = element.rating;
+                            promedio += element.rating;
+                        }
+                    });
+
+                    promedio = promedio/calificaciones.length;
+
+                    calificaciones.forEach(numero => {
+                        desviacion += Math.pow(numero - promedio, 2);
+                    });
+
+                    desviacion = Math.sqrt(desviacion/calificaciones.length);
+
+                    res.innerHTML = "Restaurantes: "+calificaciones.length;
+                    prom.innerHTML = "Media: "+promedio;
+                    devest.innerHTML = "Desviacion estandar: "+desviacion.toFixed(4);
+                }catch(error){
+                    console.log(error);
+                }
+            });
+
+            formaBusq.addEventListener("submit", (e) =>{
+                e.preventDefault();
+                var orLat = marcador.getPosition().lat();
+                var orLng = marcador.getPosition().lng();
+                var radio = (1/111120) * document.getElementById("rangoBus").value;
+                var cal = document.getElementById("rateBus").value;
+                var disLat, disLng, distancia, it = 0, resultados = [];
+                var recipiente = document.getElementById("resBusq");
+                recipiente.innerHTML="";
+
+
+                try{
+                    buffer.forEach(element => {
+                        disLat = Math.pow(element.address.location.lat - orLat, 2);
+                        disLng = Math.pow(element.address.location.lng - orLng, 2);
+                        distancia = Math.sqrt(disLat + disLng);
+
+                        if(distancia <= radio && element.rating >= cal){
+                            crearEntrada(element, it);
+                            it++;
+                            //console.log(element);
+                        }
+                    });
+
+                    FB.XFBML.parse();
+                }catch(error){
+                    console.log(error);
+                }
+            });
+
+            function crearEntrada(objeto, iteracion){
+                var recipiente = document.getElementById("resBusq");
+                
+                var entrada = document.createElement("div");
+                if(isOdd(iteracion)){
+                    entrada.setAttribute("class", "diamond");
+                }else{
+                    entrada.setAttribute("class", "pearl");
+                }
+                
+                var titulo = document.createElement("p");
+                titulo.setAttribute("class", "titulo");
+                titulo.innerHTML = objeto.name;
+                entrada.appendChild(titulo);
+
+                var tabla = document.createElement("table");
+                var row1 = document.createElement("tr");
+                var row2 = document.createElement("tr");
+                
+                var celda1 = document.createElement("td");
+                celda1.innerHTML = "<p> Sitio web: "+objeto.contact.site+" </p>";
+                row1.appendChild(celda1);
+
+                var celda2 = document.createElement("td");
+                celda2.innerHTML = "<p> Rating: "+objeto.rating+" </p>";
+                row1.appendChild(celda2);
+
+                var celda3 = document.createElement("td");
+                celda3.innerHTML = "<p> Direccion: "+objeto.address.street+" </p>";
+                row2.appendChild(celda3);
+
+                var celda4 = document.createElement("td");
+                celda4.innerHTML = "<p> Telefono: "+objeto.contact.phone+" </p>";
+                row2.appendChild(celda4);
+
+                tabla.appendChild(row1);
+                tabla.appendChild(row2);
+                entrada.appendChild(tabla);
+
+                var espacio = document.createElement("br");
+                entrada.appendChild(espacio)
+                var like = crearLike(objeto.contact.site);
+                entrada.appendChild(like);
+
+                recipiente.appendChild(entrada);
+
+            }
+
+            /*<div class="fb-like" data-href="https://developers.facebook.com/docs/plugins/" 
+            data-width="100" data-layout="standard" data-action="like" data-size="small" data-share="true"></div>*/
+
+            function crearLike(url){
+                var like = document.createElement("div");
+                like.setAttribute("class", "fb-like");
+                like.setAttribute("data-href", url);
+                like.setAttribute("data-width", "100");
+                like.setAttribute("data-layout", "standard");
+                like.setAttribute("data-action", "like");
+                like.setAttribute("data-size", "small");
+                like.setAttribute("data-share", "true");
+
+                return like;
+            }
+
+            function isOdd(num) { 
+                return num % 2;
+            }
+
+        </script>
+
+    </body>
+</html>
